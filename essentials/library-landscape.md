@@ -43,4 +43,32 @@ if __name__ == "__main__":
     mcp.run() # Starts the server
 
 ```
-If you are building that agentic SPARQL system we discussed earlier, using **FastMCP** would be the fastest and most reliable way to code up those three specialized MCP servers!
+## 🌐 Antimeridian (antimeridian)
+ * **What it is:** A specialized geospatial utility library.
+ * **Role:** In geometry and mapping, the **antimeridian** (the 180th meridian / International Date Line) is a notorious headache. If a geographic boundary crosses this line, standard coordinate math breaks because the longitude suddenly jumps from +180^\circ to -180^\circ, tearing your polygons apart. This library automatically fixes and "heals" those shapes.
+ * **In your ecosystem:** If your SPARQL agent searches geospatial graph data (like ISO country shapes or global shipping lanes), this library serves as a data-cleaning interface to ensure coordinates are mathematically sound before you feed them to a map interface or an LLM.
+## 🦔 LangChain-Qdrant (langchain-qdrant)
+*(Note: It is spelled **Qdrant**, though pronounced like "Quadrant").*
+ * **What it is:** The official LangChain interface package for the **Qdrant Vector Database**.
+ * **Role:** Qdrant is a high-performance vector search engine designed to store and search unstructured data using text embeddings.
+ * **In your ecosystem:** Remember the **Schema Discovery Node** from our SPARQL architecture? You can't fit a massive ontology into the LLM context window. Instead, you vectorize all your graph's class names, property descriptions, and URIs, and store them inside Qdrant. When a user asks a natural language question, langchain-qdrant performs a semantic search to pull out just the top 5 most relevant triples to feed to the LLM.
+## 🔄 Tenacity (tenacity)
+ * **What it is:** A powerful, general-purpose Python retrying library.
+ * **Role:** Instead of writing complex while True: loops with time.sleep() to handle unstable API requests, you simply drop a @retry decorator over a function. It handles exponential backoff, maximum retry caps, and specific exception filtering natively.
+ * **In your ecosystem:** Essential for agent resilience. When your LangGraph agent attempts to call a remote SPARQL endpoint or an external LLM API, the network might blink, or you might hit a rate limit. Tenacity acts as the defense interface that gracefully pauses and retries the connection behind the scenes before throwing an error.
+```python
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+def call_sparql_endpoint():
+    # If the Triplestore times out, Tenacity automatically 
+    # retries up to 3 times with increasing delays.
+    ...
+
+```
+## 📊 Prometheus (prometheus_client)
+ * **What it is:** The industry-standard open-source monitoring and alerting toolkit interface for Python applications.
+ * **Role:** While **Langtrace** and **LangSmith** give you deep, trace-level logs of *what the LLM said*, Prometheus captures structural system metrics (CPU utilization, raw HTTP response times, total count of queries executed, active database connections).
+ * **In your ecosystem:** This handles operational visibility. It exposes a /metrics endpoint on your application server. A Prometheus server scrapes this data, allowing you to feed operational dashboards in **Grafana**. If your LangGraph pipeline experiences a massive spike in validation errors or the SPARQL database response times climb above 2 seconds, Prometheus triggers DevOps alerts.
+### Bringing it all together:
+In your target system, **Qdrant** stores your ontology maps, **Antimeridian** sanitizes geospatial data, **Tenacity** keeps network requests to your triplestores stable under pressure, and **Prometheus** watches the entire server infrastructure to ensure it stays healthy.
