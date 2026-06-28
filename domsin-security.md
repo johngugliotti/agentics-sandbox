@@ -64,4 +64,150 @@ The requests library does not natively support password-protected private keys o
    
    ```
  2. **Use an SSL Context** with urllib3 or a custom transport adapter in requests to load the password-protected key.
-Are your certificate files currently password-protected, or are you running into any specific SSL handshake errors?
+
+...
+
+Since your private key is password-protected, standard requests will throw an error because its cert parameter expects an unprotected key.
+To handle a password-protected PKI certificate, you need to create a custom **HTTP Adapter** for requests that loads your password into an SSL context.
+Here is the cleanest way to do this using requests and Python's built-in ssl library:
+```python
+import ssl
+import requests
+from requests.adapters import HTTPAdapter
+
+# 1. Define your file paths and the password
+cert_file = "path/to/user_cert.crt"
+key_file = "path/to/user_key.key"
+key_password = "YourSecretPasswordHere"  # In production, use environment variables!
+url = "https://internal-service.yourcompany.com/api/data"
+
+class PasswordAdapter(HTTPAdapter):
+    """A custom requests adapter that injects a password-protected SSL context."""
+    def init_poolmanager(self, *args, **kwargs):
+        # Create a default client-side SSL context
+        context = ssl.create_default_context()
+        
+        # Load your cert and password-protected key into the context
+        context.load_cert_chain(
+            certfile=cert_file, 
+            keyfile=key_file, 
+            password=key_password
+        )
+        
+        # If your company uses an internal CA, you can load it here too:
+        # context.load_verify_locations(cafile="path/to/company_root_ca.pem")
+        
+        kwargs['ssl_context'] = context
+        return super().init_poolmanager(*args, **kwargs)
+
+# 2. Use a requests Session and mount your custom adapter
+session = requests.Session()
+session.mount("https://", PasswordAdapter())
+
+try:
+    # Make the request using the session (no 'cert' parameter needed here anymore)
+    response = session.get(url)
+    response.raise_for_status()
+    print("Authenticated successfully!")
+    print(response.json())
+    
+except requests.exceptions.RequestException as e:
+    print(f"Connection failed: {e}")
+
+```
+### 
+Since your private key is password-protected, standard requests will throw an error because its cert parameter expects an unprotected key.
+To handle a password-protected PKI certificate, you need to create a custom **HTTP Adapter** for requests that loads your password into an SSL context.
+Here is the cleanest way to do this using requests and Python's built-in ssl library:
+```python
+import ssl
+import requests
+from requests.adapters import HTTPAdapter
+
+# 1. Define your file paths and the password
+cert_file = "path/to/user_cert.crt"
+key_file = "path/to/user_key.key"
+key_password = "YourSecretPasswordHere"  # In production, use environment variables!
+url = "https://internal-service.yourcompany.com/api/data"
+
+class PasswordAdapter(HTTPAdapter):
+    """A custom requests adapter that injects a password-protected SSL context."""
+    def init_poolmanager(self, *args, **kwargs):
+        # Create a default client-side SSL context
+        context = ssl.create_default_context()
+        
+        # Load your cert and password-protected key into the context
+        context.load_cert_chain(
+            certfile=cert_file, 
+            keyfile=key_file, 
+            password=key_password
+        )
+        
+        # If your company uses an internal CA, you can load it here too:
+        # context.load_verify_locations(cafile="path/to/company_root_ca.pem")
+        
+        kwargs['ssl_context'] = context
+        return super().init_poolmanager(*args, **kwargs)
+
+# 2. Use a requests Session and mount your custom adapter
+session = requests.Session()
+session.mount("https://", PasswordAdapter())
+
+try:
+    # Make the request using the session (no 'cert' parameter needed here anymore)
+    response = session.get(url)
+    response.raise_for_status()
+    print("Authenticated successfully!")
+    print(response.json())
+    
+except requests.exceptions.RequestException as e:
+    print(f"Connection failed: {e}")
+
+```
+
+Since your private key is password-protected, standard requests will throw an error because its cert parameter expects an unprotected key.
+To handle a password-protected PKI certificate, you need to create a custom **HTTP Adapter** for requests that loads your password into an SSL context.
+Here is the cleanest way to do this using requests and Python's built-in ssl library:
+```python
+import ssl
+import requests
+from requests.adapters import HTTPAdapter
+
+# 1. Define your file paths and the password
+cert_file = "path/to/user_cert.crt"
+key_file = "path/to/user_key.key"
+key_password = "YourSecretPasswordHere"  # In production, use environment variables!
+url = "https://internal-service.yourcompany.com/api/data"
+
+class PasswordAdapter(HTTPAdapter):
+    """A custom requests adapter that injects a password-protected SSL context."""
+    def init_poolmanager(self, *args, **kwargs):
+        # Create a default client-side SSL context
+        context = ssl.create_default_context()
+        
+        # Load your cert and password-protected key into the context
+        context.load_cert_chain(
+            certfile=cert_file, 
+            keyfile=key_file, 
+            password=key_password
+        )
+        
+        # If your company uses an internal CA, you can load it here too:
+        # context.load_verify_locations(cafile="path/to/company_root_ca.pem")
+        
+        kwargs['ssl_context'] = context
+        return super().init_poolmanager(*args, **kwargs)
+
+# 2. Use a requests Session and mount your custom adapter
+session = requests.Session()
+session.mount("https://", PasswordAdapter())
+
+try:
+    # Make the request using the session (no 'cert' parameter needed here anymore)
+    response = session.get(url)
+    response.raise_for_status()
+    print("Authenticated successfully!")
+    print(response.json())
+    
+except requests.exceptions.RequestException as e:
+    print(f"Connection failed: {e}")
